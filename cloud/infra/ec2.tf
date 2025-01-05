@@ -20,7 +20,7 @@ data "aws_ami" "ubuntu" {
 }
 
 # IAM role for EC2
-resource "aws_iam_role" "ec2_role" {
+resource "aws_iam_role" "zdrovi_server_ec2_role" {
   name = "ec2_instance_connect_role"
 
   assume_role_policy = jsonencode({
@@ -38,9 +38,9 @@ resource "aws_iam_role" "ec2_role" {
 }
 
 # IAM policy for EC2 Instance Connect
-resource "aws_iam_role_policy" "ec2_instance_connect" {
-  name = "ec2_instance_connect_policy"
-  role = aws_iam_role.ec2_role.id
+resource "aws_iam_role_policy" "zdrovi_server_instance_connect_policy" {
+  name = "zdrovi_server_instance_connect_policy"
+  role = aws_iam_role.zdrovi_server_ec2_role.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -57,18 +57,18 @@ resource "aws_iam_role_policy" "ec2_instance_connect" {
 }
 
 # Create instance profile
-resource "aws_iam_instance_profile" "ec2_profile" {
-  name = "ec2_instance_connect_profile"
-  role = aws_iam_role.ec2_role.name
+resource "aws_iam_instance_profile" "zdrovi_server_ec2_profile" {
+  name = "zdrovi_server_ec2_profile"
+  role = aws_iam_role.zdrovi_server_ec2_role.name
 }
 
 # Create EC2 Instance
 resource "aws_instance" "zdrovi_server" {
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = var.instance_type
-  subnet_id              = aws_subnet.public.id
-  vpc_security_group_ids = [aws_security_group.ec2.id]
-  iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
+  subnet_id              = aws_subnet.zdrovi_public_subnet.id
+  vpc_security_group_ids = [aws_security_group.zdrovi_server_security_group.id]
+  iam_instance_profile   = aws_iam_instance_profile.zdrovi_server_ec2_profile.name
 
   metadata_options {
     http_endpoint               = "enabled"
