@@ -1,4 +1,4 @@
-# VPC
+# Create VPC
 resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr
   enable_dns_hostnames = true
@@ -9,7 +9,19 @@ resource "aws_vpc" "main" {
   }
 }
 
-# Internet Gateway
+# Create Public Subnet (needed for EC2 Instance Connect)
+resource "aws_subnet" "public" {
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = var.subnet_cidr
+  availability_zone       = "${var.region}a"
+  map_public_ip_on_launch = false  # We don't need public IPs
+
+  tags = {
+    Name = "public"
+  }
+}
+
+# Create Internet Gateway (needed for EC2 Instance Connect)
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
 
@@ -18,19 +30,7 @@ resource "aws_internet_gateway" "main" {
   }
 }
 
-# Public Subnet
-resource "aws_subnet" "public" {
-  vpc_id                  = aws_vpc.main.id
-  cidr_block              = var.subnet_cidr
-  availability_zone       = "${var.region}a"
-  map_public_ip_on_launch = true
-
-  tags = {
-    Name = "public"
-  }
-}
-
-# Route Table
+# Create Route Table
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
 
@@ -50,19 +50,41 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public.id
 }
 
-# Security Group
-resource "aws_security_group" "allow_ssh" {
-  name        = "allow_ssh"
-  description = "Allow SSH inbound traffic from specified IPs"
+# VPC Endpoint for EC2 Instance Connect
+resource "aws_vpc_endpoint" "ec2_instance_connect" {
+  vpc_id             = aws_vpc.main.id
+  service_name       = "com.amazonaws.${var.region}.ec2-instance-connect"
+  vpc_endpoint_type  = "Interface"
+  subnet_ids         = [aws_subnet.public.id]
+
+  security_group_ids = [aws_security_group.vpc_endpoint.id]
+
+  private_dns_enabled = true
+}
+
+# Security Group for VPC Endpoint
+resource "aws_security_group" "vpc_endpoint" {
+  name        = "vpc-endpoint-sg"
+  description = "Security group for VPC Endpoint"
   vpc_id      = aws_vpc.main.id
 
   ingress {
-    description = "SSH from specified IPs"
-    from_port   = 22
-    to_port     = 22
+    from_port   = 443
+    to_port     = 443
     protocol    = "tcp"
-    cidr_blocks = var.allowed_ips
+    cidr_blocks = [var.vpc_cidr]
   }
+
+  tags = {
+    Name = "vpc-endpoint-sg"
+  }
+}
+
+# Security Group for EC2
+resource "aws_security_group" "ec2" {
+  name        = "ec2-instance-connect"
+  description = "Security group for EC2 Instance Connect"
+  vpc_id      = aws_vpc.main.id
 
   egress {
     from_port   = 0
@@ -72,6 +94,6 @@ resource "aws_security_group" "allow_ssh" {
   }
 
   tags = {
-    Name = "allow_ssh"
+    Name = "ec2-instance-connect"
   }
 }
