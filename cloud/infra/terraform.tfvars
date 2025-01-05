@@ -1,0 +1,1 @@
+allowed_ips = ["X.X.X.X/32", "Y.Y.Y.Y/32"]
