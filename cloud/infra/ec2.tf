@@ -1,20 +1,20 @@
 # Get latest Ubuntu 22.04 LTS AMI
 data "aws_ami" "ubuntu" {
   most_recent = true
-  owners      = ["099720109477"] # Canonical
+  owners = ["099720109477"] # Canonical
 
   filter {
-    name   = "name"
+    name = "name"
     values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
   }
 
   filter {
-    name   = "virtualization-type"
+    name = "virtualization-type"
     values = ["hvm"]
   }
 
   filter {
-    name   = "root-device-type"
+    name = "root-device-type"
     values = ["ebs"]
   }
 }
@@ -64,11 +64,11 @@ resource "aws_iam_instance_profile" "zdrovi_server_ec2_profile" {
 
 # Create EC2 Instance
 resource "aws_instance" "zdrovi_server" {
-  ami                    = data.aws_ami.ubuntu.id
-  instance_type          = var.instance_type
-  subnet_id              = aws_subnet.zdrovi_public_subnet.id
+  ami                         = data.aws_ami.ubuntu.id
+  instance_type               = var.instance_type
+  subnet_id                   = aws_subnet.zdrovi_public_subnet.id
   vpc_security_group_ids = [aws_security_group.zdrovi_server_security_group.id]
-  iam_instance_profile   = aws_iam_instance_profile.zdrovi_server_ec2_profile.name
+  associate_public_ip_address = true
 
   metadata_options {
     http_endpoint               = "enabled"

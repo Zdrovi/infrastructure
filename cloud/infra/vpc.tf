@@ -14,7 +14,7 @@ resource "aws_subnet" "zdrovi_public_subnet" {
   vpc_id                  = aws_vpc.zdrovi_vpc.id
   cidr_block              = var.subnet_cidr
   availability_zone       = "${var.region}a"
-  map_public_ip_on_launch = false  # We don't need public IPs
+  map_public_ip_on_launch = true
 
   tags = {
     Name = "public"
@@ -55,6 +55,13 @@ resource "aws_security_group" "zdrovi_server_security_group" {
   name        = "zdrovi_server_security_group"
   description = "Security group for zdrovi_server EC2 Instance Connect"
   vpc_id      = aws_vpc.zdrovi_vpc.id
+
+  # Allow inbound SSH only from AWS IP ranges
+  ingress {
+    from_port       = 22
+    to_port         = 22
+    protocol        = "tcp"
+  }
 
   egress {
     from_port   = 0
