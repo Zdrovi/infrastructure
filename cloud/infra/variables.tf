@@ -4,11 +4,6 @@ variable "region" {
   default     = "eu-central-1"  # Frankfurt
 }
 
-variable "allowed_ips" {
-  description = "List of IPs allowed for SSH access"
-  type        = list(string)
-}
-
 variable "vpc_cidr" {
   description = "CIDR block for VPC"
   type        = string
